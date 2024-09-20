@@ -1,0 +1,44 @@
+schema {
+    query: Query
+}
+
+type pqr {
+    id: String!
+    usuario: String!
+    servicio: String!
+    estado: String!
+    fecha_apertura: String!
+    fecha_cierre: String!
+    comentarios: String!
+}
+
+type GPQRS {
+    success: Boolean!
+    errors: [String]
+    pqrs: [pqr]
+}
+
+type GPQR {
+    success: Boolean!
+    errors: [String]
+    pqrs: [pqr]
+}
+
+type Comentarios {
+    id: String!
+    comentario: String!
+    fecha_creacion: String!
+    creador: String!
+}
+
+type GetComments {
+    success: Boolean!
+    errors: [String]
+    comentarios: [Comentarios]
+}
+
+type Query {
+    listPQR: GPQRS!
+    getPQR(user: String!): GPQR!
+    getComments(id: String!): GetComments!
+}
