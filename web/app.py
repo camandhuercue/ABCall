@@ -6,36 +6,51 @@ import requests
 app = Flask(__name__)
 api = Api(app)
 
-graphql_query = """{
-    listPQR {
+graphql_query_incidents = """{{
+    getPQR(user: "{}") {{
         success
         errors
-        pqrs {
+        pqrs {{
             id
             usuario
-        }
-    }
-}"""
+            servicio
+            estado
+            fecha_apertura
+            fecha_cierre
+            comentarios
+        }}
+    }}
+}}"""
 
-#parser = reqparse.RequestParser()
-#parser.add_argument('user', location='json')
+graphql_query_comments = """{{
+    getComments(id: "{}") {{
+        success
+        errors
+        comentarios {{
+            id
+            comentario
+            fecha_creacion
+            creador
+        }}
+    }}
+}}"""
 
-class TodoList(Resource):
-    def get(self):
-        args = parser.parse_args()
-        print(args)
-        return dict(request.headers)
-
+class QueryData(Resource):
     def post(self):
-#        args = parser.parse_args()
         json_data = request.get_json(force=True)
         headers = dict(request.headers)
-        data = {'query': graphql_query}
-        query = requests.post(url="http://graphql:5000/graphql", data=json.dumps(data), headers={"Content-Type": "application/json"})
-        resp = {'headers': headers, 'json': json_data, 'graphql': query.json()}
+        data = {'query': graphql_query_incidents.format(json_data['user']['id'])}
+        query_incidents = requests.post(url="http://graphql:5000/graphql", data=json.dumps(data), headers={"Content-Type": "application/json"})
+        incidentes = []
+        for incidente in query_incidents.json()['data']['getPQR']['pqrs']:
+            data = {'query': graphql_query_comments.format(incidente['comentarios'])}
+            query_comments = requests.post(url="http://graphql:5000/graphql", data=json.dumps(data), headers={"Content-Type": "application/json"})
+            incidentes.append({'id': incidente['id'], 'data': query_comments.json()['data']['getComments']['comentarios']})
+
+        resp = {'headers': headers, 'json': json_data, 'graphql': query_incidents.json(), 'incidentes': incidentes}
         return resp, 201
 
-api.add_resource(TodoList, '/app1/todos')
+api.add_resource(QueryData, '/web')
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0')
